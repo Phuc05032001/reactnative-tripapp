@@ -8,31 +8,28 @@ import { NavigationContainer, useIsFocused } from '@react-navigation/native';
 
 import { createStackNavigator } from '@react-navigation/stack';
 
-// import {HomeScreen} from './components/home';
 
-// import {ViewAllStudentScreen} from './components/viewAll';
-
-// import {EditRecordScreen} from './components/edit';
-
-var db = openDatabase({ name: 'SchoolDatabase.db' });
+var db = openDatabase({ name: 'trip.db' });
 
 function HomeScreen({ navigation }) {
 
   const [S_Name, setName] = useState('');
-  const [S_Phone, setPhone] = useState();
-  const [S_Address, setAddress] = useState('');
+  const [S_Destination, setDestination] = useState();
+  const [S_Dot, setDot] = useState('');
+  const [S_Require, setRequire] = useState();
+  const [S_Description, setDescription] = useState('');
 
   useEffect(() => {
     db.transaction(function (txn) {
       txn.executeSql(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='Student_Table'",
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='Trips_Table'",
         [],
         function (tx, res) {
           console.log('item:', res.rows.length);
           if (res.rows.length == 0) {
-            txn.executeSql('DROP TABLE IF EXISTS Student_Table', []);
+            txn.executeSql('DROP TABLE IF EXISTS Trips_Table', []);
             txn.executeSql(
-              'CREATE TABLE IF NOT EXISTS Student_Table(student_id INTEGER PRIMARY KEY AUTOINCREMENT, student_name VARCHAR(30), student_phone INT(15), student_address VARCHAR(255))',
+              'CREATE TABLE IF NOT EXISTS Trips_Table(Trips_id INTEGER PRIMARY KEY AUTOINCREMENT, Trips_name VARCHAR(255), Trips_destination VARCHAR(255), Trips_dot VARCHAR(255), Trips_requireAssessment VARCHAR(255), Trips_description VARCHAR(255))',
               []
             );
           }
@@ -44,14 +41,14 @@ function HomeScreen({ navigation }) {
 
   const insertData = () => {
 
-    if (S_Name == '' || S_Phone == '' || S_Address == '') {
+    if (S_Name == '' || S_Destination == '' ||  S_Dot == '' || S_Require == ''|| S_Description == '' ) {
       Alert.alert('Please Enter All the Values');
     } else {
 
       db.transaction(function (tx) {
         tx.executeSql(
-          'INSERT INTO Student_Table (student_name, student_phone, student_address) VALUES (?,?,?)',
-          [S_Name, S_Phone, S_Address],
+          'INSERT INTO Trips_Table (Trips_name, Trips_destination, Trips_dot, Trips_requireAssessment, Trips_description) VALUES (?,?,?,?,?)',
+          [S_Name, S_Destination, S_Dot, S_Require, S_Description],
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
@@ -66,7 +63,7 @@ function HomeScreen({ navigation }) {
 
   navigateToViewScreen = () => {
 
-    navigation.navigate('ViewAllStudentScreen');
+    navigation.navigate('ViewAllTripsScreen');
   }
 
   return (
@@ -82,25 +79,41 @@ function HomeScreen({ navigation }) {
           onChangeText={
             (text) => setName(text)
           }
-          placeholder="Enter Student Name"
+          placeholder="Enter Trips Name"
           value={S_Name} />
 
         <TextInput
           style={styles.textInputStyle}
           onChangeText={
-            (text) => setPhone(text)
+            (text) => setDestination(text)
           }
-          placeholder="Enter Student Phone Number"
-          keyboardType={'numeric'}
-          value={S_Phone} />
+          placeholder="Enter Trips Destination"
+          value={S_Destination} />
 
         <TextInput
           style={[styles.textInputStyle, { marginBottom: 20 }]}
           onChangeText={
-            (text) => setAddress(text)
+            (text) => setDot(text)
           }
-          placeholder="Enter Student Address"
-          value={S_Address} />
+          placeholder="Enter Date of the trip"
+          value={S_Dot} />
+
+        <TextInput
+          style={[styles.textInputStyle, { marginBottom: 20 }]}
+          onChangeText={
+            (text) => setRequire(text)
+          }
+          placeholder="Enter require"
+          value={S_Require} />
+
+        <TextInput
+          style={[styles.textInputStyle, { marginBottom: 20 }]}
+          onChangeText={
+            (text) => setDescription(text)
+          }
+          placeholder="Enter Description"
+          value={S_Description} />
+          
 
         <TouchableOpacity
           style={styles.touchableOpacity}
@@ -114,7 +127,7 @@ function HomeScreen({ navigation }) {
           style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: '#33691E' }]}
           onPress={navigateToViewScreen}>
 
-          <Text style={styles.touchableOpacityText}> Click Here View All Students List </Text>
+          <Text style={styles.touchableOpacityText}> Click Here View All Tripss List </Text>
 
         </TouchableOpacity>
 
@@ -124,7 +137,7 @@ function HomeScreen({ navigation }) {
   );
 };
 
-function ViewAllStudentScreen({ navigation }) {
+function ViewAllTripsScreen({ navigation }) {
 
   const [items, setItems] = useState([]);
   const [empty, setEmpty] = useState([]);
@@ -134,7 +147,7 @@ function ViewAllStudentScreen({ navigation }) {
   useEffect(() => {
     db.transaction((tx) => {
       tx.executeSql(
-        'SELECT * FROM Student_Table',
+        'SELECT * FROM Trips_Table',
         [],
         (tx, results) => {
           var temp = [];
@@ -178,13 +191,16 @@ function ViewAllStudentScreen({ navigation }) {
     );
   }
 
-  const navigateToEditScreen = (id, name, phoneNumber, address) => {
+  const navigateToEditScreen = (id, name, destination, dot, requireAssessment, description) => {
 
     navigation.navigate('EditRecordScreen', {
-      student_id: id,
-      student_name: name,
-      student_phone: phoneNumber,
-      student_address: address
+      Trips_id: id,
+      Trips_name: name,
+      Trips_destination: destination,
+      Trips_dot: dot,
+      Trips_requireAssessment: requireAssessment,
+      Trips_description: description,
+
     });
   }
 
@@ -198,12 +214,15 @@ function ViewAllStudentScreen({ navigation }) {
             ItemSeparatorComponent={listViewItemSeparator}
             keyExtractor={(item, index) => index.toString()}
             renderItem={({ item }) =>
-              <View key={item.student_id} style={{ padding: 20 }}>
-                <TouchableOpacity onPress={() => navigateToEditScreen(item.student_id, item.student_name, item.student_phone, item.student_address)} >
-                  <Text style={styles.itemsStyle}> Id: {item.student_id} </Text>
-                  <Text style={styles.itemsStyle}> Name: {item.student_name} </Text>
-                  <Text style={styles.itemsStyle}> Phone Number: {item.student_phone} </Text>
-                  <Text style={styles.itemsStyle}> Address: {item.student_address} </Text>
+              <View key={item.Trips_id} style={{ padding: 20 }}>
+
+                <TouchableOpacity onPress={() => navigateToEditScreen(item.Trips_id, item.Trips_name, item.Trips_destination, item.Trips_dot, item.Trips_requireAssessment, item.Trips_description)} >
+                  <Text style={styles.itemsStyle}> Id: {item.Trips_id} </Text>
+                  <Text style={styles.itemsStyle}> Name: {item.Trips_name} </Text>
+                  <Text style={styles.itemsStyle}> Destination: {item.Trips_destination} </Text>
+                  <Text style={styles.itemsStyle}> Date of Trip: {item.Trips_dot} </Text>
+                  <Text style={styles.itemsStyle}> RequireAssessment: {item.Trips_requireAssessment} </Text>
+                  <Text style={styles.itemsStyle}> Description: {item.Trips_description} </Text>
                 </TouchableOpacity>
               </View>
             }
@@ -219,24 +238,27 @@ function EditRecordScreen({ route, navigation }) {
 
   const [S_Id, setID] = useState('');
   const [S_Name, setName] = useState('');
-  const [S_Phone, setPhone] = useState();
-  const [S_Address, setAddress] = useState('');
+  const [S_Destination, setDestination] = useState();
+  const [S_Dot, setDot] = useState('');
+  const [S_Require, setRequire] = useState();
+  const [S_Description, setDescription] = useState('');
 
   useEffect(() => {
 
-    setID(route.params.student_id);
-    setName(route.params.student_name);
-    setPhone(route.params.student_phone.toString());
-    setAddress(route.params.student_address);
+    setID(route.params.Trips_id);
+    setName(route.params.Trips_name);
+    setDestination(route.params.Trips_destination);
+    setDot(route.params.Trips_dot);
+    setRequire(route.params.Trips_requireAssessment);
+    setDescription(route.params.Trips_description);
 
   }, []);
 
   const editData = () => {
-
     db.transaction((tx) => {
       tx.executeSql(
-        'UPDATE Student_Table set student_name=?, student_phone=? , student_address=? where student_id=?',
-        [S_Name, S_Phone, S_Address, S_Id],
+        'UPDATE Trips_Table set Trips_name=?, Trips_destination=? , Trips_dot=? , Trips_requireAssessment=? , Trips_description=? where Trips_id=?',
+        [S_Name, S_Destination, S_Dot, S_Require, S_Description, S_Id],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
           if (results.rowsAffected > 0) {
@@ -250,7 +272,7 @@ function EditRecordScreen({ route, navigation }) {
   const deleteRecord = () => {
     db.transaction((tx) => {
       tx.executeSql(
-        'DELETE FROM Student_Table where student_id=?',
+        'DELETE FROM Trips_Table where Trips_id=?',
         [S_Id],
         (tx, results) => {
           console.log('Results', results.rowsAffected);
@@ -261,7 +283,7 @@ function EditRecordScreen({ route, navigation }) {
               [
                 {
                   text: 'Ok',
-                  onPress: () => navigation.navigate('ViewAllStudentScreen'),
+                  onPress: () => navigation.navigate('ViewAllTripsScreen'),
                 },
               ],
               { cancelable: false }
@@ -286,31 +308,46 @@ function EditRecordScreen({ route, navigation }) {
           onChangeText={
             (text) => setName(text)
           }
-          placeholder="Enter Student Name"
+          placeholder="Enter Trips Name"
           value={S_Name} />
 
         <TextInput
           style={styles.textInputStyle}
           onChangeText={
-            (text) => setPhone(text)
+            (text) => setDestination(text)
           }
-          placeholder="Enter Student Phone Number"
-          keyboardType={'numeric'}
-          value={S_Phone} />
+          placeholder="Enter Trips Destination"
+          value={S_Destination} />
+
+        <TextInput
+          style={[styles.textInputStyle]}
+          onChangeText={
+            (text) => setDot(text)
+          }
+          placeholder="Enter Date of the trip"
+          value={S_Dot} />
+
+        <TextInput
+          style={[styles.textInputStyle]}
+          onChangeText={
+            (text) => setRequire(text)
+          }
+          placeholder="Enter require"
+          value={S_Require} />
 
         <TextInput
           style={[styles.textInputStyle, { marginBottom: 20 }]}
           onChangeText={
-            (text) => setAddress(text)
+            (text) => setDescription(text)
           }
-          placeholder="Enter Student Address"
-          value={S_Address} />
+          placeholder="Enter Description"
+          value={S_Description} />
 
         <TouchableOpacity
           style={styles.touchableOpacity}
           onPress={editData}>
 
-          <Text style={styles.touchableOpacityText}> Click Here To Edit Record </Text>
+          <Text style={styles.touchableOpacityText}>Edit Record </Text>
 
         </TouchableOpacity>
 
@@ -318,7 +355,7 @@ function EditRecordScreen({ route, navigation }) {
           style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: '#33691E' }]}
           onPress={deleteRecord}>
 
-          <Text style={styles.touchableOpacityText}> Click Here To Delete Current Record </Text>
+          <Text style={styles.touchableOpacityText}>Delete Current Record </Text>
 
         </TouchableOpacity>
 
@@ -337,21 +374,9 @@ export default function App() {
 
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
 
-        <Stack.Screen name="ViewAllStudentScreen" component={ViewAllStudentScreen} />
+        <Stack.Screen name="ViewAllTripsScreen" component={ViewAllTripsScreen} />
 
         <Stack.Screen name="EditRecordScreen" component={EditRecordScreen} />
-
-        {/* <Stack.Screen name="HomeScreen" component={HomeScreen}>
-          {props => <HomeScreen {...props} /> }
-        </Stack.Screen>
-
-        <Stack.Screen name="ViewAllStudentScreen" component={ViewAllStudentScreen}>
-          {props => <ViewAllStudentScreen {...props} /> }
-        </Stack.Screen>
-
-        <Stack.Screen name="EditRecordScreen" component={EditRecordScreen}>
-          {props => <EditRecordScreen {...props} /> }
-        </Stack.Screen> */}
 
       </Stack.Navigator>
     </NavigationContainer>
