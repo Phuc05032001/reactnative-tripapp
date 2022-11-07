@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { SafeAreaView, Text, View, StyleSheet, Alert, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import { RefreshControl, SafeAreaView, Text, View, StyleSheet, Alert, TouchableOpacity, TextInput, FlatList } from 'react-native';
 
 import { openDatabase } from 'react-native-sqlite-storage';
 
@@ -18,6 +18,7 @@ function HomeScreen({ navigation }) {
   const [S_Dot, setDot] = useState('');
   const [S_Require, setRequire] = useState();
   const [S_Description, setDescription] = useState('');
+  const showAlert = [];
 
   useEffect(() => {
     db.transaction(function (txn) {
@@ -39,12 +40,34 @@ function HomeScreen({ navigation }) {
 
   }, []);
 
-  const insertData = () => {
+  const checkValid=()=>{
+    let formIsValid = true;
+    let regexCheckData = "^(3[01]|[12][0-9]|0?[1-9])/(1[0-2]|0?[1-9])/(?:[0-9]{2})?[0-9]{2}$";
 
     if (S_Name == '' || S_Destination == '' ||  S_Dot == '' || S_Require == ''|| S_Description == '' ) {
       Alert.alert('Please Enter All the Values');
-    } else {
+      formIsValid = false;
+    } 
+    else {
 
+      if(S_Require == "Yes" || S_Require == "No"){
+        formIsValid = true;
+      }else{
+        formIsValid = false;
+        Alert.alert("Risk Assessment: this line is just fill in 'Yes' or 'No'");
+      }
+      if (!S_Dot.match(regexCheckData)) {
+        formIsValid = false;
+        Alert.alert('dateOfTrip: isValid Date time: form d/m/yy or dd/mm/yyyy');
+      }
+    }
+      return formIsValid;
+    
+  }
+
+  const insertData = () => {
+    
+    if(checkValid()){
       db.transaction(function (tx) {
         tx.executeSql(
           'INSERT INTO Trips_Table (Trips_name, Trips_destination, Trips_dot, Trips_requireAssessment, Trips_description) VALUES (?,?,?,?,?)',
@@ -57,12 +80,11 @@ function HomeScreen({ navigation }) {
           }
         );
       });
-
     }
-  }
+}
+  
 
   navigateToViewScreen = () => {
-
     navigation.navigate('ViewAllTripsScreen');
   }
 
@@ -71,9 +93,10 @@ function HomeScreen({ navigation }) {
       <View style={styles.mainContainer}>
 
         <Text style={{ fontSize: 24, textAlign: 'center', color: '#000' }}>
-          Insert Data Into SQLite Database
+          ADD YOUR TRIP
         </Text>
 
+        <Text style={{fontSize: 20}}>Name</Text>
         <TextInput
           style={styles.textInputStyle}
           onChangeText={
@@ -82,6 +105,7 @@ function HomeScreen({ navigation }) {
           placeholder="Enter Trips Name"
           value={S_Name} />
 
+        <Text style={{fontSize: 20}}>Destination</Text>
         <TextInput
           style={styles.textInputStyle}
           onChangeText={
@@ -90,22 +114,25 @@ function HomeScreen({ navigation }) {
           placeholder="Enter Trips Destination"
           value={S_Destination} />
 
+        <Text style={{fontSize: 20}}>Date of the Trip</Text>
         <TextInput
-          style={[styles.textInputStyle, { marginBottom: 20 }]}
+          style={[styles.textInputStyle]}
           onChangeText={
             (text) => setDot(text)
           }
           placeholder="Enter Date of the trip"
           value={S_Dot} />
 
+        <Text style={{fontSize: 20}}>Require Risk Assessment</Text>
         <TextInput
-          style={[styles.textInputStyle, { marginBottom: 20 }]}
+          style={[styles.textInputStyle]}
           onChangeText={
             (text) => setRequire(text)
           }
           placeholder="Enter require"
           value={S_Require} />
 
+        <Text style={{fontSize: 20}}>Description</Text>
         <TextInput
           style={[styles.textInputStyle, { marginBottom: 20 }]}
           onChangeText={
@@ -119,7 +146,7 @@ function HomeScreen({ navigation }) {
           style={styles.touchableOpacity}
           onPress={insertData}>
 
-          <Text style={styles.touchableOpacityText}> Click Here To Insert Data Into SQLite Database </Text>
+          <Text style={styles.touchableOpacityText}> ADD </Text>
 
         </TouchableOpacity>
 
@@ -127,7 +154,7 @@ function HomeScreen({ navigation }) {
           style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: '#33691E' }]}
           onPress={navigateToViewScreen}>
 
-          <Text style={styles.touchableOpacityText}> Click Here View All Tripss List </Text>
+          <Text style={styles.touchableOpacityText}>View All Tripss List </Text>
 
         </TouchableOpacity>
 
@@ -141,6 +168,12 @@ function ViewAllTripsScreen({ navigation }) {
 
   const [items, setItems] = useState([]);
   const [empty, setEmpty] = useState([]);
+  const [refreshPage, setRefreshPage] = useState("");
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    wait(2000).then(() => setRefreshing(false));
+  }, []);
 
   const isFocused = useIsFocused();
 
@@ -204,6 +237,16 @@ function ViewAllTripsScreen({ navigation }) {
     });
   }
 
+  const deleteAllRecord = () => {
+    db.transaction((tx) => {
+      tx.executeSql(
+        'DELETE FROM Trips_Table',
+        Alert.alert("Delete All Record!!!")
+      );
+    });
+    navigation.navigate('HomeScreen');
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
@@ -225,9 +268,28 @@ function ViewAllTripsScreen({ navigation }) {
                   <Text style={styles.itemsStyle}> Description: {item.Trips_description} </Text>
                 </TouchableOpacity>
               </View>
+
             }
           />
         }
+        <View>
+          <TouchableOpacity
+            style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: 'red' }]}
+
+            // refreshControl={
+            //   <RefreshControl
+            //     refreshing={refreshing}
+            //     onRefresh={onRefresh}
+            //   />
+            // }
+
+            onPress={deleteAllRecord}
+            >
+
+            <Text style={styles.touchableOpacityText}>Delete All Record </Text>
+
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
 
@@ -242,6 +304,7 @@ function EditRecordScreen({ route, navigation }) {
   const [S_Dot, setDot] = useState('');
   const [S_Require, setRequire] = useState();
   const [S_Description, setDescription] = useState('');
+  const showAlert = [];
 
   useEffect(() => {
 
@@ -255,18 +318,45 @@ function EditRecordScreen({ route, navigation }) {
   }, []);
 
   const editData = () => {
-    db.transaction((tx) => {
-      tx.executeSql(
-        'UPDATE Trips_Table set Trips_name=?, Trips_destination=? , Trips_dot=? , Trips_requireAssessment=? , Trips_description=? where Trips_id=?',
-        [S_Name, S_Destination, S_Dot, S_Require, S_Description, S_Id],
-        (tx, results) => {
-          console.log('Results', results.rowsAffected);
-          if (results.rowsAffected > 0) {
-            Alert.alert('Record Updated Successfully...')
-          } else Alert.alert('Error');
+
+    const checkValid=()=>{
+      let formIsValid = true;
+      let regexCheckData = "^(3[01]|[12][0-9]|0?[1-9])/(1[0-2]|0?[1-9])/(?:[0-9]{2})?[0-9]{2}$";
+  
+      if (S_Name == '' || S_Destination == '' ||  S_Dot == '' || S_Require == ''|| S_Description == '' ) {
+        Alert.alert('Please Enter All the Values');
+        formIsValid = false;
+      } 
+      else {
+  
+        if(S_Require == "Yes" || S_Require == "No"){
+          formIsValid = true;
+        }else{
+          formIsValid = false;
+          Alert.alert("Risk Assessment: this line is just fill in 'Yes' or 'No'");
         }
-      );
-    });
+        if (!S_Dot.match(regexCheckData)) {
+          formIsValid = false;
+          Alert.alert('dateOfTrip: isValid Date time: form d/m/yy or dd/mm/yyyy');
+        }
+      }
+        return formIsValid;
+    }
+
+    if(checkValid()){
+      db.transaction((tx) => {
+        tx.executeSql(
+          'UPDATE Trips_Table set Trips_name=?, Trips_destination=? , Trips_dot=? , Trips_requireAssessment=? , Trips_description=? where Trips_id=?',
+          [S_Name, S_Destination, S_Dot, S_Require, S_Description, S_Id],
+          (tx, results) => {
+            console.log('Results', results.rowsAffected);
+            if (results.rowsAffected > 0) {
+              Alert.alert('Record Updated Successfully...')
+            } else Alert.alert('Error');
+          }
+        );
+      });
+    }
   }
 
   const deleteRecord = () => {
@@ -300,9 +390,10 @@ function EditRecordScreen({ route, navigation }) {
       <View style={styles.mainContainer}>
 
         <Text style={{ fontSize: 24, textAlign: 'center', color: '#000' }}>
-          Edit Record In SQLite Database
+          Edit YOUR TRIP
         </Text>
 
+        <Text style={{fontSize: 20}}>Name</Text>
         <TextInput
           style={styles.textInputStyle}
           onChangeText={
@@ -311,6 +402,7 @@ function EditRecordScreen({ route, navigation }) {
           placeholder="Enter Trips Name"
           value={S_Name} />
 
+        <Text style={{fontSize: 20}}>Destination</Text>
         <TextInput
           style={styles.textInputStyle}
           onChangeText={
@@ -319,6 +411,7 @@ function EditRecordScreen({ route, navigation }) {
           placeholder="Enter Trips Destination"
           value={S_Destination} />
 
+        <Text style={{fontSize: 20}}>Date of the trip</Text>
         <TextInput
           style={[styles.textInputStyle]}
           onChangeText={
@@ -327,6 +420,8 @@ function EditRecordScreen({ route, navigation }) {
           placeholder="Enter Date of the trip"
           value={S_Dot} />
 
+
+        <Text style={{fontSize: 20}}>Require Risk Assessment</Text>
         <TextInput
           style={[styles.textInputStyle]}
           onChangeText={
@@ -335,6 +430,7 @@ function EditRecordScreen({ route, navigation }) {
           placeholder="Enter require"
           value={S_Require} />
 
+        <Text style={{fontSize: 20}}>Description</Text>
         <TextInput
           style={[styles.textInputStyle, { marginBottom: 20 }]}
           onChangeText={
@@ -344,7 +440,7 @@ function EditRecordScreen({ route, navigation }) {
           value={S_Description} />
 
         <TouchableOpacity
-          style={styles.touchableOpacity}
+          style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: 'yellow' }]}
           onPress={editData}>
 
           <Text style={styles.touchableOpacityText}>Edit Record </Text>
@@ -352,7 +448,7 @@ function EditRecordScreen({ route, navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: '#33691E' }]}
+          style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: 'red' }]}
           onPress={deleteRecord}>
 
           <Text style={styles.touchableOpacityText}>Delete Current Record </Text>
@@ -386,7 +482,6 @@ export default function App() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    alignItems: 'center',
     padding: 10,
   },
 
@@ -409,7 +504,6 @@ const styles = StyleSheet.create({
   textInputStyle: {
     height: 45,
     width: '90%',
-    textAlign: 'center',
     borderWidth: 1,
     borderColor: '#00B8D4',
     borderRadius: 7,
