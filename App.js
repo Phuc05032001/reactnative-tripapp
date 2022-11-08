@@ -75,7 +75,8 @@ function HomeScreen({ navigation }) {
           (tx, results) => {
             console.log('Results', results.rowsAffected);
             if (results.rowsAffected > 0) {
-              Alert.alert('Data Inserted Successfully....');
+              // Alert.alert('Data Inserted Successfully....');
+              navigation.navigate('ViewAllTripsScreen');
             } else Alert.alert('Failed....');
           }
         );
@@ -83,11 +84,6 @@ function HomeScreen({ navigation }) {
     }
 }
   
-
-  navigateToViewScreen = () => {
-    navigation.navigate('ViewAllTripsScreen');
-  }
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.mainContainer}>
@@ -134,12 +130,13 @@ function HomeScreen({ navigation }) {
 
         <Text style={{fontSize: 20}}>Description</Text>
         <TextInput
-          style={[styles.textInputStyle, { marginBottom: 20 }]}
+          style={[styles.textInputStyle, { marginBottom: 20, height: 100, textAlignVertical: 'top' }]}
           onChangeText={
             (text) => setDescription(text)
           }
           placeholder="Enter Description"
-          value={S_Description} />
+          value={S_Description} 
+          TextInput multiline={true}/>
           
 
         <TouchableOpacity
@@ -147,14 +144,6 @@ function HomeScreen({ navigation }) {
           onPress={insertData}>
 
           <Text style={styles.touchableOpacityText}> ADD </Text>
-
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: '#33691E' }]}
-          onPress={navigateToViewScreen}>
-
-          <Text style={styles.touchableOpacityText}>View All Tripss List </Text>
 
         </TouchableOpacity>
 
@@ -168,12 +157,6 @@ function ViewAllTripsScreen({ navigation }) {
 
   const [items, setItems] = useState([]);
   const [empty, setEmpty] = useState([]);
-  const [refreshPage, setRefreshPage] = useState("");
-
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    wait(2000).then(() => setRefreshing(false));
-  }, []);
 
   const isFocused = useIsFocused();
 
@@ -247,6 +230,10 @@ function ViewAllTripsScreen({ navigation }) {
     navigation.navigate('HomeScreen');
   }
 
+  const Addtrip = () => {
+    navigation.navigate('HomeScreen');
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
@@ -274,20 +261,16 @@ function ViewAllTripsScreen({ navigation }) {
         }
         <View>
           <TouchableOpacity
-            style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: 'red' }]}
-
-            // refreshControl={
-            //   <RefreshControl
-            //     refreshing={refreshing}
-            //     onRefresh={onRefresh}
-            //   />
-            // }
-
-            onPress={deleteAllRecord}
-            >
-
+            style={[styles.touchableOpacity, { marginTop: 20, borderRadius: 0}]}
+            onPress={Addtrip}>
+            <Text style={styles.touchableOpacityText}>ADD Trip</Text>
+          </TouchableOpacity>
+        </View>
+        <View>
+          <TouchableOpacity
+            style={[styles.touchableOpacity, { backgroundColor: 'red', borderRadius: 0 }]}
+            onPress={deleteAllRecord}>
             <Text style={styles.touchableOpacityText}>Delete All Record </Text>
-
           </TouchableOpacity>
         </View>
       </View>
@@ -432,18 +415,20 @@ function EditRecordScreen({ route, navigation }) {
 
         <Text style={{fontSize: 20}}>Description</Text>
         <TextInput
-          style={[styles.textInputStyle, { marginBottom: 20 }]}
+          style={[styles.textInputStyle, { marginBottom: 20 , height: 100, textAlignVertical: 'top'  }]}
           onChangeText={
             (text) => setDescription(text)
           }
           placeholder="Enter Description"
-          value={S_Description} />
+          value={S_Description}
+          TextInput multiline={true}
+          />
 
         <TouchableOpacity
           style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: 'yellow' }]}
           onPress={editData}>
 
-          <Text style={styles.touchableOpacityText}>Edit Record </Text>
+          <Text style={styles.touchableOpacityText}>Update</Text>
 
         </TouchableOpacity>
 
@@ -451,7 +436,7 @@ function EditRecordScreen({ route, navigation }) {
           style={[styles.touchableOpacity, { marginTop: 20, backgroundColor: 'red' }]}
           onPress={deleteRecord}>
 
-          <Text style={styles.touchableOpacityText}>Delete Current Record </Text>
+          <Text style={styles.touchableOpacityText}>Delete</Text>
 
         </TouchableOpacity>
 
@@ -468,9 +453,9 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator>
 
-        <Stack.Screen name="HomeScreen" component={HomeScreen} />
-
         <Stack.Screen name="ViewAllTripsScreen" component={ViewAllTripsScreen} />
+
+        <Stack.Screen name="HomeScreen" component={HomeScreen} />
 
         <Stack.Screen name="EditRecordScreen" component={EditRecordScreen} />
 
@@ -486,7 +471,7 @@ const styles = StyleSheet.create({
   },
 
   touchableOpacity: {
-    backgroundColor: '#0091EA',
+    backgroundColor: '#0a354f',
     alignItems: 'center',
     borderRadius: 8,
     justifyContent: 'center',
@@ -503,9 +488,9 @@ const styles = StyleSheet.create({
 
   textInputStyle: {
     height: 45,
-    width: '90%',
+    width: '100%',
     borderWidth: 1,
-    borderColor: '#00B8D4',
+    borderColor: 'grey',
     borderRadius: 7,
     marginTop: 15,
   },
